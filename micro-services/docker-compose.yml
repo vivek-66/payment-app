@@ -120,8 +120,14 @@ services:
        - "9090:9090" 
      networks: 
        - app-network
-
-  
+     depends_on:
+      - auth-service
+      - payment-service
+      - frontend
+      - mongodb
+      - elasticsearch
+      - redis
+      - nginx
 
 volumes:
   mongodb_data:
