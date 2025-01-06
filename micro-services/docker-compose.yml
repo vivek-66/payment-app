@@ -134,7 +134,7 @@ services:
      ports: 
       - "9113:9113" 
      environment: 
-      - NGINX_PROXY_PASS_URL=http://52.90.147.63:80 
+      - NGINX_PROXY_PASS_URL=http://nginx:80 
      networks: 
       - app-network 
      depends_on: 
