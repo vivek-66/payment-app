@@ -10,6 +10,6 @@ scrape_configs:
   - job_name: 'nginx'
     static_configs:
       - targets: ['52.90.147.63:80']
-    metrics_path: '/status'
+    metrics_path: '/prometheus'
 
     
