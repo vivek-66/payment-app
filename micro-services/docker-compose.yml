@@ -129,16 +129,7 @@ services:
       - redis
       - nginx
 
-  nginx-exporter: 
-     image: nginx/nginx-prometheus-exporter:latest 
-     ports: 
-      - "9113:9113" 
-     environment: 
-      - NGINX_PROXY_PASS_URL=http://nginx:80 
-     networks: 
-      - app-network 
-     depends_on: 
-        - nginx
+  
 
 volumes:
   mongodb_data:
