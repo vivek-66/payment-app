@@ -2,7 +2,7 @@
 from pymongo import MongoClient
 import os
 
-MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
+MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://52.90.147.63:27017")
 client = MongoClient(MONGODB_URI)
 db = client.payment_app
 
