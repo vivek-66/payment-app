@@ -111,6 +111,15 @@ services:
     networks:
       - app-network
 
+  prometheus: 
+     image: prom/prometheus:latest 
+     volumes: 
+       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+       - prometheus_data:/prometheus
+     ports: 
+       - "9090:9090" 
+     networks: 
+       - app-network
 
   
 
@@ -119,6 +128,7 @@ volumes:
   elasticsearch_data:
   logstash_data:
   redis_data:
+  prometheus_data:
 
 networks:
   app-network:
