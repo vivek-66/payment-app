@@ -20,4 +20,4 @@ scrape_configs:
   # Scraping cAdvisor for container metrics
   - job_name: 'cadvisor'
     static_configs:
-      - targets: ['cadvisor:8080']
+      - targets: ['cadvisor:8088']
