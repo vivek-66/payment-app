@@ -4,6 +4,7 @@ services:
     image: prom/prometheus:latest
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     ports:
@@ -62,7 +63,8 @@ services:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
     ports:
       - "9193:9093"
-   
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
     networks:
       - monitoring
 
@@ -74,5 +76,5 @@ volumes:
 
 networks:
   monitoring:
-    driver: bridge
+    external: true
 
