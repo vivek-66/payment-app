@@ -32,9 +32,9 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_SMTP_ENABLED=true
       - GF_SMTP_HOST=smtp.gmail.com:587
-      - GF_SMTP_USER=thomas@gmail.com
+      - GF_SMTP_USER=thomman4027@gmail.com
       - GF_SMTP_PASSWORD=xkin htwx lucy tffq
-      - GF_SMTP_FROM_ADDRESS=thomas@gmail.com
+      - GF_SMTP_FROM_ADDRESS=thomman4027@gmail.com
       - GF_SMTP_FROM_NAME=Grafana Alerts
       - GF_SMTP_SKIP_VERIFY=false
     volumes:
