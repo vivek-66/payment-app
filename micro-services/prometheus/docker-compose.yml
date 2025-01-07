@@ -39,7 +39,6 @@ services:
       - GF_SMTP_SKIP_VERIFY=false
     volumes:
       - grafana-storage:/var/lib/grafana
-      - ./grafana.ini:/etc/grafana/grafana.ini
     networks:
       - monitoring
     depends_on:
