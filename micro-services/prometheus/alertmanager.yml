@@ -14,8 +14,8 @@ receivers:
       - to: 'alerts@example.com'
         from: 'alertmanager@example.com'
         smarthost: 'smtp.gmail.com:587'
-        auth_username: 'thomas@gmail.com'
-        auth_identity: 'thomas@gmail.com'
+        auth_username: 'thomman4027@gmail.com'
+        auth_identity: 'thomman4027@gmail.com'
         auth_password: 'xkinhtwxlucytffq'
         require_tls: true
 
