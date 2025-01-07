@@ -16,7 +16,7 @@ receivers:
         smarthost: 'smtp.gmail.com:587'
         auth_username: 'thomman4027@gmail.com'
         auth_identity: 'thomman4027@gmail.com'
-        auth_password: 'xkinhtwxlucytffq'
+        auth_password: 'Th0masmail'
         require_tls: true
 
 inhibit_rules:
