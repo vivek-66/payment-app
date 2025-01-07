@@ -10,8 +10,6 @@ scrape_configs:
     static_configs:
       - targets: ['cadvisor:8088']
 
-  - job_name: 'my_application'
-    static_configs:
-      - targets: ['52.90.147.63:80']  # Adjust this to your application's metrics endpoint
+
 
     
