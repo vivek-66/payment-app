@@ -1,15 +1,23 @@
 global:
-  scrape_interval: 15s
-
+  scrape_interval: 5s  # Set the interval at which Prometheus scrapes targets
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets: ['alertmanager:9093']
+rule_files:
+  - "alert_rules.yml"
 scrape_configs:
-  - job_name: 'node_exporter'
+  # Scraping Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Scraping Node Exporter metrics
+  - job_name: 'node-exporter'
     static_configs:
       - targets: ['node_exporter:9100']
 
+  # Scraping cAdvisor for container metrics
   - job_name: 'cadvisor'
     static_configs:
-      - targets: ['cadvisor:8088']
-
-
-
-    
+      - targets: ['cadvisor:8080']
