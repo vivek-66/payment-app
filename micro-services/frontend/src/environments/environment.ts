@@ -1,6 +1,7 @@
 export const environment = {
     production: false,
     apiUrl: 'http://52.90.147.63:80/api',
-    authServiceUrl: 'https://52.90.147.63:80/api/auth',
-    paymentServiceUrl: 'https://52.90.147.63:80/api/payments'
+    authServiceUrl: 'http://52.90.147.63:80/api/auth',
+    paymentServiceUrl: 'http://52.90.147.63:80/api/payments'
   };
+ 
