@@ -1,0 +1,104 @@
+pipeline {
+    agent any
+    tools {
+        nodejs 'node20.18'
+    }
+    environment {
+        NEXUS_URL = 'http://<your-nexus-ip>:8082/'
+        NEXUS_REPO = 'docker-releases'
+        DOCKER_USERNAME = credentials('nexus-docker-username')
+        DOCKER_PASSWORD = credentials('nexus-docker-password')
+        SONARQUBE = credentials('sonarqube-token')
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/vivek-66/payment-app.git'
+            }
+        }
+
+        stage('SonarQube Analysis - Backend') {
+            steps {
+                dir('micro-services/backend') {
+                    sh """
+                        /opt/sonar-scanner/bin/sonar-scanner \
+                        -Dsonar.projectKey=backend \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=http://<sonarqube-ip>:9000 \
+                        -Dsonar.login=${SONARQUBE}
+                    """
+                }
+            }
+        }
+
+        stage('SonarQube Analysis - Frontend') {
+            steps {
+                dir('micro-services/frontend') {
+                    sh """
+                        /opt/sonar-scanner/bin/sonar-scanner \
+                        -Dsonar.projectKey=frontend \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=http://<sonarqube-ip>:9000 \
+                        -Dsonar.login=${SONARQUBE}
+                    """
+                }
+            }
+        }
+
+        stage('Frontend Build') {
+            steps {
+                dir('micro-services/frontend') {
+                    sh """
+                        npm install -g @angular/cli@latest
+                        npm install
+                        ng build --prod
+                    """
+                }
+            }
+        }
+
+        stage('Backend Build') {
+            steps {
+                dir('micro-services/backend') {
+                    sh """
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip install -r requirements.txt
+                    """
+                }
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                sh 'docker build -t payment-frontend:latest ./micro-services/frontend'
+                sh 'docker build -t auth-service:latest ./micro-services/backend/auth_service'
+                sh 'docker build -t payment-service:latest ./micro-services/backend/payment_service'
+            }
+        }
+
+        stage('Push to Nexus') {
+            steps {
+                sh """
+                    echo ${DOCKER_PASSWORD} | docker login ${NEXUS_URL} -u ${DOCKER_USERNAME} --password-stdin
+                    docker tag payment-frontend:latest ${NEXUS_URL}${NEXUS_REPO}/payment-frontend:latest
+                    docker tag auth-service:latest ${NEXUS_URL}${NEXUS_REPO}/auth-service:latest
+                    docker tag payment-service:latest ${NEXUS_URL}${NEXUS_REPO}/payment-service:latest
+                    docker push ${NEXUS_URL}${NEXUS_REPO}/payment-frontend:latest
+                    docker push ${NEXUS_URL}${NEXUS_REPO}/auth-service:latest
+                    docker push ${NEXUS_URL}${NEXUS_REPO}/payment-service:latest
+                """
+            }
+        }
+
+        stage('Deploy Services') {
+            steps {
+                dir('micro-services') {
+                    sh 'docker-compose down && docker-compose up -d --build'
+                }
+            }
+        }
+    }
+}
