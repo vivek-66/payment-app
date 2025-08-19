@@ -15,4 +15,4 @@ route:
 receivers:
   - name: 'email-receiver'
     email_configs:
-      - to: 'thomman4027@gmail.com'
+      - to: 'vivekvibu453@gmail.com'
