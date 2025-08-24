@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Git Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/www-domain/payment-app.git'
+                git branch: 'main', url: 'https://github.com/vivek-66/payment-app.git'
             }
         }
 
