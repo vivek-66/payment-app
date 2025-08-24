@@ -1,104 +1,155 @@
 pipeline {
     agent any
     tools {
-        nodejs 'node20.18'
+        nodejs 'node2018'
+        jdk 'JDK17'
     }
-    environment {
-        NEXUS_URL = 'http://<your-nexus-ip>:8082/'
-        NEXUS_REPO = 'docker-releases'
-        DOCKER_USERNAME = credentials('nexus-docker-username')
-        DOCKER_PASSWORD = credentials('nexus-docker-password')
-        SONARQUBE = credentials('sonarqube-token')
-    }
-
     stages {
-        stage('Checkout Code') {
+        stage('Git Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/vivek-66/payment-app.git'
+                git branch: 'main', url: 'https://github.com/www-domain/payment-app.git'
             }
         }
-
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                    sudo apt-get update
+                    sudo apt-get install -y python3.9 python3.9-venv
+                '''
+            }
+        }
         stage('SonarQube Analysis - Backend') {
             steps {
-                dir('micro-services/backend') {
-                    sh """
-                        /opt/sonar-scanner/bin/sonar-scanner \
-                        -Dsonar.projectKey=backend \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=http://<sonarqube-ip>:9000 \
-                        -Dsonar.login=${SONARQUBE}
-                    """
+                withCredentials([string(credentialsId: 'sonar-url', variable: 'SONAR_URL'), string(credentialsId: 'sonar-token-backend', variable: 'SONAR_TOKEN')]) {
+                    dir('micro-services/backend') {
+                        sh "/opt/sonar-scanner/sonar-scanner-6.2.1.4610-linux-x64/bin/sonar-scanner -Dsonar.projectKey=payment-app-backend -Dsonar.sources=. -Dsonar.host.url=${SONAR_URL} -Dsonar.login=${SONAR_TOKEN} -Dsonar.exclusions=**/venv/**,**/__pycache__/**"
+                    }
                 }
             }
         }
-
         stage('SonarQube Analysis - Frontend') {
             steps {
-                dir('micro-services/frontend') {
-                    sh """
-                        /opt/sonar-scanner/bin/sonar-scanner \
-                        -Dsonar.projectKey=frontend \
-                        -Dsonar.sources=. \
-                        -Dsonar.host.url=http://<sonarqube-ip>:9000 \
-                        -Dsonar.login=${SONARQUBE}
-                    """
+                withCredentials([string(credentialsId: 'sonar-url', variable: 'SONAR_URL'), string(credentialsId: 'sonar-token-frontend', variable: 'SONAR_TOKEN')]) {
+                    dir('micro-services/frontend') {
+                        sh "/opt/sonar-scanner/sonar-scanner-6.2.1.4610-linux-x64/bin/sonar-scanner -Dsonar.projectKey=payment-app-frontend -Dsonar.sources=. -Dsonar.host.url=${SONAR_URL} -Dsonar.login=${SONAR_TOKEN} -Dsonar.exclusions=**/node_modules/**,**/dist/**"
+                    }
                 }
             }
         }
-
+        stage('Backend Build') {
+            steps {
+                dir('micro-services/backend/auth_service') {
+                    script {
+                        sh '''
+                            python3.9 -m venv venv
+                            . venv/bin/activate && pip install -r requirements.txt
+                            export PYTHONPATH="/var/lib/jenkins/workspace/Payment-App/micro-services/backend:${PYTHONPATH}"
+                        '''
+                        sh 'uvicorn src.main:app --host 0.0.0.0 --port 8000 &'
+                        sleep 10
+                        sh 'curl --fail http://52.99.147.63:8000/health || exit 1'
+                        sh 'pkill -f "uvicorn"'
+                    }
+                }
+                dir('micro-services/backend/payment_service') {
+                    script {
+                        sh '''
+                            python3.9 -m venv venv
+                            . venv/bin/activate && pip install -r requirements.txt
+                            export PYTHONPATH="/var/lib/jenkins/workspace/Payment-App/micro-services/backend:${PYTHONPATH}"
+                        '''
+                        sh 'uvicorn src.main:app --host 0.0.0.0 --port 8001 &'
+                        sleep 10
+                        sh 'curl --fail http://52.99.147.63:8081/api/payments/health || exit 1'
+                        sh 'pkill -f "uvicorn"'
+                    }
+                }
+            }
+        }
         stage('Frontend Build') {
             steps {
                 dir('micro-services/frontend') {
-                    sh """
-                        npm install -g @angular/cli@latest
-                        npm install
-                        ng build --prod
-                    """
+                    script {
+                        sh 'npm install'
+                        sh 'npm run build --omit-dev'
+                    }
                 }
             }
         }
-
-        stage('Backend Build') {
-            steps {
-                dir('micro-services/backend') {
-                    sh """
-                        python3 -m venv venv
-                        . venv/bin/activate
-                        pip install -r requirements.txt
-                    """
-                }
-            }
-        }
-
         stage('Build Docker Images') {
             steps {
-                sh 'docker build -t payment-frontend:latest ./micro-services/frontend'
-                sh 'docker build -t auth-service:latest ./micro-services/backend/auth_service'
-                sh 'docker build -t payment-service:latest ./micro-services/backend/payment_service'
+                script {
+                    def dockerImages = [
+                        [dir: 'micro-services/backend/auth_service', name: 'backend-auth'], 
+                        [dir: 'micro-services/backend/payment_service', name: 'backend-payment'], 
+                        [dir: 'micro-services/frontend', name: 'frontend']
+                    ]
+                    env.VERSION = readFile("micro-services/version.txt").trim()
+                    dockerImages.each { img -> 
+                        dir(img.dir) {
+                            sh "docker build --no-cache -t ${img.name}:${env.VERSION} ."
+                        }
+                    }
+                }
             }
         }
-
-        stage('Push to Nexus') {
+        stage('Image Push') {
             steps {
-                sh """
-                    echo ${DOCKER_PASSWORD} | docker login ${NEXUS_URL} -u ${DOCKER_USERNAME} --password-stdin
-                    docker tag payment-frontend:latest ${NEXUS_URL}${NEXUS_REPO}/payment-frontend:latest
-                    docker tag auth-service:latest ${NEXUS_URL}${NEXUS_REPO}/auth-service:latest
-                    docker tag payment-service:latest ${NEXUS_URL}${NEXUS_REPO}/payment-service:latest
-                    docker push ${NEXUS_URL}${NEXUS_REPO}/payment-frontend:latest
-                    docker push ${NEXUS_URL}${NEXUS_REPO}/auth-service:latest
-                    docker push ${NEXUS_URL}${NEXUS_REPO}/payment-service:latest
-                """
+                script {
+                    def dockerImages = [
+                        [dir: 'micro-services/backend/auth_service', name: 'backend-auth'], 
+                        [dir: 'micro-services/backend/payment_service', name: 'backend-payment'], 
+                        [dir: 'micro-services/frontend', name: 'frontend']
+                    ]
+                    dockerImages.each { img -> 
+                        dir(img.dir) {
+                            sh "docker tag ${img.name}:${env.VERSION} ${DOCKHUB_USERNAME}/${img.name}:${env.VERSION}"
+                            sh "docker tag ${img.name}:${env.VERSION} ${NEXUS_URL}/${NEXUS_REPO}/${img.name}:${env.VERSION}"
+                        }
+                    }
+                    withCredentials([usernamePassword(credentialsId: 'nexus-creds', passwordVariable: 'NEXUS_PASSWORD', usernameVariable: 'NEXUS_USERNAME')]) {
+                        sh "echo ${NEXUS_PASSWORD} | docker login ${NEXUS_URL} -u ${NEXUS_USERNAME} --password-stdin"
+                    }
+                    dockerImages.each { img -> 
+                        dir(img.dir) {
+                            sh "docker push ${NEXUS_URL}/${NEXUS_REPO}/${img.name}:${env.VERSION}"
+                        }
+                    }
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKHUB_PASSWORD', usernameVariable: 'DOCKHUB_USERNAME')]) {
+                        sh "echo ${DOCKHUB_PASSWORD} | docker login -u ${DOCKHUB_USERNAME} --password-stdin"
+                    }
+                    dockerImages.each { img -> 
+                        dir(img.dir) {
+                            sh "docker push ${DOCKHUB_USERNAME}/${img.name}:${env.VERSION}"
+                        }
+                    }
+                }
             }
         }
-
         stage('Deploy Services') {
             steps {
                 dir('micro-services') {
-                    sh 'docker-compose down && docker-compose up -d --build'
+                    sh 'docker-compose up -d --build'
                 }
             }
+        }
+        stage('Monitor Services') {
+            steps {
+                dir('micro-services/prometheus') {
+                    sh 'docker-compose up -d --build'
+                }
+            }
+        }
+    }
+    post {
+        always {
+            echo 'Cleaning up...'
+            sh '''
+                pkill -f "uvicorn" || true
+                rm -rf venv
+                find . -type d -name "__pycache__" -exec rm -rf {} +
+            '''
+            cleanWs()
         }
     }
 }
