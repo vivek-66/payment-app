@@ -1,8 +1,7 @@
 pipeline {
     agent any
     tools {
-        nodejs 'node2018'
-        jdk 'JDK17'   // <-- must match your Jenkins tool config
+        nodejs 'node2018'  // <-- must match your Jenkins tool config
     }
 
     stages {
