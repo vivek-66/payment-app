@@ -19,10 +19,9 @@ services:
     volumes:
       - ./backend/common:/app/common
     logging:
-      driver: "json-file"
+      driver: "gelf"
       options:
-        max-size: "10m"
-        max-file: "3"
+        gelf-address: "udp://logstash:5044"
     depends_on:
       - mongodb
       - elasticsearch
@@ -37,15 +36,13 @@ services:
     volumes:
       - ./backend/common:/app/common
     logging:
-      driver: "json-file"
+      driver: "gelf"
       options:
-        max-size: "10m"
-        max-file: "3"
+        gelf-address: "udp://logstash:5044"
     depends_on:
       - mongodb
       - elasticsearch
       - redis
-
     networks:
       - app-network
 
@@ -99,9 +96,11 @@ services:
       - logstash_data:/var/log/logstash
     depends_on:
       - elasticsearch
+    ports:
+      - "5044:5044/udp"
     networks:
       - app-network
-  
+
   redis:
     image: redis:latest
     ports:
@@ -111,15 +110,11 @@ services:
     networks:
       - app-network
 
-
-  
-
 volumes:
   mongodb_data:
   elasticsearch_data:
   logstash_data:
   redis_data:
-
 
 networks:
   app-network:
