@@ -3,6 +3,16 @@ pipeline {
     tools {
         nodejs 'node2018'  // <-- must match your Jenkins tool config
     }
+   stage('Debug') {
+       steps {
+           sh '''
+               echo "=== DEBUG: Jenkins is running shell commands ==="
+               whoami
+               pwd
+               ls -al
+           '''
+       }
+   }
 
     stages {
         stage('Git Checkout') {
