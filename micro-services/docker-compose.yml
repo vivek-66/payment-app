@@ -12,39 +12,39 @@ services:
       - app-network
 
   auth-service:
-    build: ./backend/auth_service
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/payment_app
-      - JWT_SECRET=your-secret-key
-    volumes:
-      - ./backend/common:/app/common
-    logging:
-      driver: "gelf"
-      options:
-        gelf-address: "udp://logstash:5044"
-    depends_on:
-      - mongodb
-      - elasticsearch
-    networks:
-      - app-network
+  build: ./backend/auth_service
+  environment:
+    - MONGODB_URI=mongodb://mongodb:27017/payment_app
+    - JWT_SECRET=your-secret-key
+  volumes:
+    - ./backend/common:/app/common
+  logging:
+    driver: "gelf"
+    options:
+      gelf-address: "udp://172.18.0.5:5044"
+  depends_on:
+    - mongodb
+    - elasticsearch
+  networks:
+    - app-network
 
-  payment-service:
-    build: ./backend/payment_service
-    environment:
-      - MONGODB_URI=mongodb://mongodb:27017/payment_app
-      - ELASTICSEARCH_HOST=elasticsearch
-    volumes:
-      - ./backend/common:/app/common
-    logging:
-      driver: "gelf"
-      options:
-        gelf-address: "udp://logstash:5044"
-    depends_on:
-      - mongodb
-      - elasticsearch
-      - redis
-    networks:
-      - app-network
+payment-service:
+  build: ./backend/payment_service
+  environment:
+    - MONGODB_URI=mongodb://mongodb:27017/payment_app
+    - ELASTICSEARCH_HOST=elasticsearch
+  volumes:
+    - ./backend/common:/app/common
+  logging:
+    driver: "gelf"
+    options:
+      gelf-address: "udp://172.18.0.5:5044"
+  depends_on:
+    - mongodb
+    - elasticsearch
+    - redis
+  networks:
+    - app-network
 
   frontend:
     build: ./frontend
