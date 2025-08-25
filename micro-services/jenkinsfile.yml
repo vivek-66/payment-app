@@ -85,23 +85,17 @@ stage('Backend Build') {
         dir('micro-services/backend/auth_service') {
             script {
                 sh '''
-                    python3.9 -m venv venv
-                    . venv/bin/activate && pip install -r requirements.txt
+                   python3.9 -m venv venv
+. venv/bin/activate && pip install -r requirements.txt
 
-                    # Run Uvicorn with correct PYTHONPATH
-                    nohup python -m uvicorn src.main:app --host 0.0.0.0 --port 8000 \
-                        --reload --log-level info \
-                        --factory &
-                    
-                    # Wait for server
-                    sleep 10
+# Run Uvicorn with correct PYTHONPATH
+PYTHONPATH=$WORKSPACE/micro-services/backend uvicorn src.main:app --host 0.0.0.0 --port 8000 &
 
-                    # Health check
-                    curl --fail http://13.126.19.149:8000/health || exit 1
+sleep 10
+curl --fail http://13.126.19.149:8000/health || exit 1
 
-                    # Stop uvicorn
-                    pkill -f "uvicorn"
-                ''', env: ["PYTHONPATH=$WORKSPACE/micro-services/backend"]
+pkill -f "uvicorn"
+
             }
         }
 
@@ -109,17 +103,15 @@ stage('Backend Build') {
             script {
                 sh '''
                     python3.9 -m venv venv
-                    . venv/bin/activate && pip install -r requirements.txt
+. venv/bin/activate && pip install -r requirements.txt
 
-                    nohup python -m uvicorn src.main:app --host 0.0.0.0 --port 8001 \
-                        --reload --log-level info \
-                        --factory &
-                    
-                    sleep 10
-                    curl --fail http://13.126.19.149:8001/api/payments/health || exit 1
+PYTHONPATH=$WORKSPACE/micro-services/backend uvicorn src.main:app --host 0.0.0.0 --port 8001 &
 
-                    pkill -f "uvicorn"
-                ''', env: ["PYTHONPATH=$WORKSPACE/micro-services/backend"]
+sleep 10
+curl --fail http://13.126.19.149:8001/api/payments/health || exit 1
+
+pkill -f "uvicorn"
+
             }
 
 
