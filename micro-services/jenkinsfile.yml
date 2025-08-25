@@ -80,25 +80,32 @@ pipeline {
     }
 }
 
-        stage('Backend Build') {
-            steps {
-                dir('micro-services/backend/auth_service') {
-                    script {
-                        sh '''
-                            python3.9 -m venv venv
-                            . venv/bin/activate && pip install -r requirements.txt
-                            export PYTHONPATH="/var/lib/jenkins/workspace/Payment-App/micro-services/backend:${PYTHONPATH}"
-                        '''
-                        // Run Uvicorn in the background
-                        sh 'uvicorn src.main:app --host 0.0.0.0 --port 8001 &'
-                        // Wait for the server to start
-                        sleep 10
-                        // Health check to ensure the server is running
-                        sh 'curl --fail http://13.126.19.149:8090/health || exit 1'
-                        // Stop the Uvicorn server
-                        sh 'pkill -f "uvicorn"'
-                    }
-                }
+      stage('Backend Build') {
+    steps {
+        dir('micro-services/backend/auth_service') {
+            script {
+                sh '''
+                    python3.9 -m venv venv
+                    . venv/bin/activate && pip install -r requirements.txt
+                    export PYTHONPATH="$WORKSPACE/micro-services/backend:${PYTHONPATH}"
+                '''
+                // Run Uvicorn in the background (port 8090 to match curl)
+                sh '''
+                    nohup venv/bin/python -m uvicorn src.main:app --host 0.0.0.0 --port 8090 > uvicorn.log 2>&1 &
+                '''
+                // Wait for the server to start
+                sleep 10
+                // Health check (use localhost inside Jenkins)
+                sh 'curl --fail http://localhost:8090/health || exit 1'
+                // Show logs for debugging (optional)
+                sh 'cat uvicorn.log || true'
+                // Stop the Uvicorn server
+                sh 'pkill -f "uvicorn" || true'
+            }
+        }
+    }
+}
+
                 dir('micro-services/backend/payment_service') {
                     script {
                         sh '''
