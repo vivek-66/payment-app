@@ -80,7 +80,7 @@ pipeline {
     }
 }
 
- stage('Backend Build') {
+stage('Backend Build') {
     steps {
         dir('micro-services/backend/auth_service') {
             script {
@@ -98,29 +98,28 @@ pipeline {
                 sh 'kill $(cat uvicorn.pid) || true'
             }
         }
+
+        dir('micro-services/backend/payment_service') {
+            script {
+                sh '''
+                    python3.9 -m venv venv
+                    . venv/bin/activate && pip install -r requirements.txt
+                    export PYTHONPATH="$WORKSPACE/micro-services/backend:${PYTHONPATH}"
+                '''
+                // Run Uvicorn in the background
+                sh 'uvicorn src.main:app --host 0.0.0.0 --port 8001 &'
+                // Wait for the server to start
+                sleep 10
+                // Health check to ensure the server is running
+                sh 'curl --fail http://localhost:8001/api/payments/health || exit 1'
+                // Stop the Uvicorn server
+                sh 'pkill -f "uvicorn"'
+            }
+        }
     }
 }
 
 
-                dir('micro-services/backend/payment_service') {
-                    script {
-                        sh '''
-                            python3.9 -m venv venv
-                            . venv/bin/activate && pip install -r requirements.txt
-                            export PYTHONPATH="/var/lib/jenkins/workspace/Payment-App/micro-services/backend:${PYTHONPATH}"
-                        '''
-                        // Run Uvicorn in the background
-                        sh 'uvicorn src.main:app --host 0.0.0.0 --port 8001 &'
-                        // Wait for the server to start
-                        sleep 10
-                        // Health check to ensure the server is running
-                        sh 'curl --fail http://:8081/api/payments/health || exit 1'
-                        // Stop the Uvicorn server
-                        sh 'pkill -f "uvicorn"'
-                    }
-                }
-            }
-        }
         
         stage('Frontend Build') {
             steps {
