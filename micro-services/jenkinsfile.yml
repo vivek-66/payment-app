@@ -7,7 +7,7 @@ pipeline {
     environment {
         DOCKHUB_USERNAME = "vivekkrishnab"
         DOCKHUB_PASSWORD = "vivek2003@"
-        NEXUS_URL = "13.233.67.207:8082"
+        NEXUS_URL = "13.126.19.149:8082"
         NEXUS_USERNAME = "admin"
         NEXUS_PASSWORD = "vivek2003@"
         NEXUS_REPO = "docker-release"
@@ -51,7 +51,7 @@ pipeline {
                           -Dsonar.projectKey=payment-app-backend \
                           -Dsonar.sources=. \
                           -Dsonar.exclusions=**/__pycache__/**,**/venv/** \
-                          -Dsonar.host.url=http://13.233.67.207:9000 \
+                          -Dsonar.host.url=http://13.126.19.149:9000 \
                           -Dsonar.login=${SONAR_TOKEN}
                     '''
                 }
@@ -71,7 +71,7 @@ pipeline {
                           -Dsonar.projectKey=payment-app-frontend \
                           -Dsonar.sources=. \
                           -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/.angular/** \
-                          -Dsonar.host.url=http://13.233.67.207:9000 \
+                          -Dsonar.host.url=http://13.126.19.149:9000 \
                           -Dsonar.login=${SONAR_TOKEN}
                     '''
                 }
