@@ -87,10 +87,7 @@ stage('Backend Build') {
                 sh '''
                     python3.9 -m venv venv
                     . venv/bin/activate && pip install -r requirements.txt
-                    export PYTHONPATH="$WORKSPACE/micro-services/backend:${PYTHONPATH}"
-
-                    # Run Uvicorn for Auth Service
-                    uvicorn src.main:app --host 0.0.0.0 --port 8000 &
+                    PYTHONPATH=$WORKSPACE/micro-services/backend uvicorn src.main:app --host 0.0.0.0 --port 8000
 
                     sleep 10
                     curl --fail http://13.126.19.149:8000/health || exit 1
@@ -105,10 +102,8 @@ stage('Backend Build') {
                 sh '''
                     python3.9 -m venv venv
                     . venv/bin/activate && pip install -r requirements.txt
-                    export PYTHONPATH="$WORKSPACE/micro-services/backend:${PYTHONPATH}"
+                  PYTHONPATH=$WORKSPACE/micro-services/backend uvicorn src.main:app --host 0.0.0.0 --port 8001
 
-                    # Run Uvicorn for Payment Service
-                    uvicorn src.main:app --host 0.0.0.0 --port 8001 &
 
                     sleep 10
                     curl --fail http://13.126.19.149:8001/api/payments/health || exit 1
