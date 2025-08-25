@@ -93,16 +93,14 @@ pipeline {
                     nohup venv/bin/python -m uvicorn src.main:app --host 0.0.0.0 --port 8090 > uvicorn.log 2>&1 &
                     echo $! > uvicorn.pid
                 '''
-                // Give the server some time to start
                 sleep 10
-                // Health check on localhost
                 sh 'curl --fail http://localhost:8090/health || (cat uvicorn.log && exit 1)'
-                // Stop server gracefully
                 sh 'kill $(cat uvicorn.pid) || true'
             }
         }
     }
 }
+
 
                 dir('micro-services/backend/payment_service') {
                     script {
