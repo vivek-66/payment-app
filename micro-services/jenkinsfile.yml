@@ -94,7 +94,7 @@ pipeline {
                         // Wait for the server to start
                         sleep 10
                         // Health check to ensure the server is running
-                        sh 'curl --fail http://52.99.147.63:8080/health || exit 1'
+                        sh 'curl --fail http://13.126.19.149:8080/health || exit 1'
                         // Stop the Uvicorn server
                         sh 'pkill -f "uvicorn"'
                     }
